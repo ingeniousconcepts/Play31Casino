@@ -12,7 +12,7 @@ public class Game : RefSingleton<Game> {
 
     const int DEFAULT_MONEY = 5000;
 
-    enum RESULT 
+    enum RESULT
     {
         NONE,
         BANKER_WIN,
@@ -65,21 +65,26 @@ public class Game : RefSingleton<Game> {
 
     public Text winMoney;
     public GameObject winPanel;
+    public GameObject lossPanel;
     public GameObject winBJ;
     public GameObject rewardPanel;
     public Text rewardMoney;
 
     public Toggle musicSwitch;
+    public Text playerResultDetails;
+    public Text aiResultDetails;
 
-	// Use this for initialization
-	void Start () {
+    public static Game instance = null;              //Static instance of GameManager which allows it to be accessed by any other script.
+
+    // Use this for initialization
+    void Start() {
         this.InitGame();
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    }
+
+    // Update is called once per frame
+    void Update() {
+
+    }
 
     /// <summary>
     /// Exit this game.
@@ -88,6 +93,21 @@ public class Game : RefSingleton<Game> {
     {
         SceneManager.LoadScene(0);
     }
+    public void Awake()
+    {
+        if (instance == null)
+
+            //if not, set instance to this
+            instance = this;
+
+        //If instance already exists and it's not this:
+        else if (instance != this)
+
+            //Then destroy this. This enforces our singleton pattern, meaning there can only ever be one instance of a GameManager.
+            Destroy(gameObject);
+
+ 
+}
 
     /// <summary>
     /// Inits the game.
@@ -161,14 +181,14 @@ public class Game : RefSingleton<Game> {
         Chip.Instance.FlyToSide();
         yield return new WaitForSeconds(1f);
 
-        Game.Instance.playerSlot.AddCard(dealer.Deal());
+        Game.Instance.playerSlot.AddCard(dealer.Deal(),false);
         yield return new WaitForSeconds(0.5f);
-        Game.Instance.playerSlot.AddCard(dealer.Deal());
+        Game.Instance.playerSlot.AddCard(dealer.Deal(),false);
         yield return new WaitForSeconds(0.5f);
 
-        Game.Instance.bankerSlot.AddCard(dealer.Deal(),true);
+        Game.Instance.bankerSlot.AddCard(dealer.Deal(),false);
         yield return new WaitForSeconds(0.5f);
-        Game.Instance.bankerSlot.AddCard(dealer.Deal(), true);
+        Game.Instance.bankerSlot.AddCard(dealer.Deal(), false);
         yield return new WaitForSeconds(0.5f);
 
         if(!this.CheckResult())
@@ -196,37 +216,57 @@ public class Game : RefSingleton<Game> {
         if (bankerPoint == playerPoint && bankerPoint == 31)
         {
             ShowResult(RESULT.NONE);
-            //TIE
+            //Tie
             return true;
         }
 
         if (bankerPoint == 31)
         {
-            ShowResult(RESULT.BANKER_WIN, bankerPoint);
+
+			ShowResult(RESULT.BANKER_WIN, bankerPoint,"AI SUM is 31");
+			print ("AI Wins");
             return true;
         }
 
         if(playerPoint == 31)
         {
-            ShowResult(RESULT.PLAYER_WIN, playerPoint);
+			ShowResult(RESULT.PLAYER_WIN, playerPoint,"Player SUM is 31");
+			print ("Player Wins");
             return true;
         }
 
+		if (playerPoint == 14) {
+
+			ShowResult(RESULT.PLAYER_WIN, playerPoint,"Player SUM is 14");
+			print ("Player Wins");
+			return true;
+		}
+
+		if (bankerPoint == 14) {
+			
+			ShowResult(RESULT.BANKER_WIN, bankerPoint,"AI SUM is 14");
+			print ("AI Wins");
+			return true;
+		}
+
         if (bankerPoint > 31 && playerPoint > 31)
         {
-            ShowResult(RESULT.BANKER_WIN, bankerPoint);
+			ShowResult(RESULT.NONE, bankerPoint);
+			print ("Tie");
             return true;
         }
 
         if(bankerPoint>31)
         {
-            ShowResult(RESULT.PLAYER_WIN, playerPoint);
+			ShowResult(RESULT.PLAYER_WIN, playerPoint,"AI Burst");
+			print ("AI Burst");
             return true;
         }
 
         if (playerPoint > 31)
         {
-            ShowResult(RESULT.BANKER_WIN, bankerPoint);
+			ShowResult(RESULT.BANKER_WIN, bankerPoint,"Player Burst");
+			print ("Player Burst");
             return true;
         }
 
@@ -240,34 +280,60 @@ public class Game : RefSingleton<Game> {
             }
             if(bankerPoint > playerPoint)
             {
-                ShowResult(RESULT.BANKER_WIN, bankerPoint);
+                ShowResult(RESULT.BANKER_WIN, bankerPoint,"AI Hand Value is Greater");
+				print ("AI Hand Value is Greater");
             }
             else
             {
-                ShowResult(RESULT.PLAYER_WIN, playerPoint);
+                ShowResult(RESULT.PLAYER_WIN, playerPoint,"Player Hand Value is Greater");
+				print ("Player Hand Value is Greater");
             }
             return true;
         }
 
         return false;
     }
-
+    
+   
+   
+    
     /// <summary>
     /// Shows game result.
     /// </summary>
     /// <param name="result">Result.</param>
     /// <param name="point">Point.</param>
-    void ShowResult(RESULT result, int point=0)
+	void ShowResult(RESULT result, int point=0,string msg = "")
     {
-//        Debug.LogFormat("{0},{1}", result, point);
-		if (result == RESULT.PLAYER_WIN) {
-			print ("Player Wins");
-			winPanel.SetActive (true);
-		}
-		
-		StartCoroutine(ResultProcess(result, point));
+        //        Debug.LogFormat("{0},{1}", result, point);
+        //		if (msg != "") {
+        //			if (result == RESULT.PLAYER_WIN) {
+        ////				print ("Player Wins");
+        //				winPanel.SetActive (true);
+        //				playerResultDetails.text = "\n"+"Player value :"+playerScore.text+"\n"+"AI Value :"+bankerScore.text;;
+        //			} else if (result == RESULT.BANKER_WIN) {
+        //				lossPanel.SetActive (true);
+        //				aiResultDetails.text = "Player value :"+playerScore.text+"\n"+"AI Value :"+bankerScore.text;;
+        //			}
+        //
+        //		} else {
+
+        buttonsPanel.HideButtons();
+        if (result == RESULT.PLAYER_WIN) {
+//				print ("Player Wins");
+				winPanel.SetActive (true);
+				playerResultDetails.text = msg+"\n"+"Player value :"+playerScore.text+"\n"+"AI Value :"+bankerScore.text;
+
+			} else if (result == RESULT.BANKER_WIN) {
+//				print ("AI Wins");
+				lossPanel.SetActive (true);
+				aiResultDetails.text = msg+"\n"+"Player value :"+playerScore.text+"\n"+"AI Value :"+bankerScore.text;
+
+			}
+//		}
+//		StartCoroutine( ResultProcess(result, point));
 
     }
+
 
     /// <summary>
     /// Result process.
@@ -383,7 +449,10 @@ public class Game : RefSingleton<Game> {
     public void Hit()
     {
         SoundManager.Instance.PlayButton();
+        playerSlot.FlipAll();
         StartCoroutine(HitProcess());
+        //playerSlot.FlipAll();
+        
     }
 
     /// <summary>
@@ -392,6 +461,7 @@ public class Game : RefSingleton<Game> {
     public void Stand()
     {
         SoundManager.Instance.PlayButton();
+
         StartCoroutine(StandProcess());
     }
 
@@ -427,6 +497,7 @@ public class Game : RefSingleton<Game> {
     /// <returns>The process.</returns>
     IEnumerator HitProcess()
     {
+
         Game.Instance.playerSlot.AddCard(dealer.Deal());
         yield return new WaitForSeconds(0.5f);
 
@@ -483,7 +554,7 @@ public class Game : RefSingleton<Game> {
     /// <returns>The hit.</returns>
     IEnumerator BankerHit()
     {
-        Game.Instance.bankerSlot.AddCard(dealer.Deal(),true);
+        Game.Instance.bankerSlot.AddCard(dealer.Deal(),false);
         yield return new WaitForSeconds(0.5f);
 
     }
@@ -513,6 +584,7 @@ public class Game : RefSingleton<Game> {
             if(!this.bankerScorePanel.alpha.Equals(show ? 1f:0f))
             {
                 LeanTween.alphaCanvas(this.bankerScorePanel, show ? 1f : 0f, 0.2f);
+                
             }
         }
         if (side == 0 || side == 2)
@@ -520,6 +592,7 @@ public class Game : RefSingleton<Game> {
             if (!this.playerScorePanel.alpha.Equals(show ? 1f : 0f))
             {
                 LeanTween.alphaCanvas(this.playerScorePanel, show ? 1f : 0f, 0.2f);
+                
             }
         }
     }

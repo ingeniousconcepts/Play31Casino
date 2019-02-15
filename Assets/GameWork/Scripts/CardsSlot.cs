@@ -32,6 +32,7 @@ public class CardsSlot : MonoBehaviour {
         if (card.number == 1)
             this.aList.Add(card);
         card.transform.SetParent(this.transform, true);
+        
 
         int i = cards.Count - 1;
         float angel = i * -3f;
